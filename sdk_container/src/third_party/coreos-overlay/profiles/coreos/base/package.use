@@ -205,3 +205,6 @@ net-fs/cifs-utils acl
 
 # Needed by net-fs/samba
 net-libs/ngtcp2 gnutls
+
+# Pulls in dev-python/mypy, which pulls in even more stuff.
+dev-python/charset-normalizer -native-extensions
