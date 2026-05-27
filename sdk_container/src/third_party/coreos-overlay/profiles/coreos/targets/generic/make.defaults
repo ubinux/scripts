@@ -8,6 +8,9 @@ USE="${USE} -cros_host -expat -cairo -X -man"
 USE="${USE} -acl -gpm -python"
 USE="${USE} -fortran -abiword -perl -poppler-data"
 
+# Proactively ensure usable binary packages for building an image.
+FEATURES="buildpkg buildpkg-proactive"
+
 # Exclude documentation
 FEATURES="nodoc noinfo noman"
 
