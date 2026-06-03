@@ -251,6 +251,9 @@ break_dep_loop() {
   done
   # rebuild-if-unbuilt is disabled to prevent portage from needlessly
   # rebuilding zlib for some unknown reason, in turn triggering more rebuilds.
+  declare -p FEATURES EMERGE_CMD EMERGE_FLAGS args pkgs
+  sudo -E bash -c 'declare -p FEATURES EMERGE_CMD EMERGE_FLAGS args pkgs'
+  exit 1
   sudo -E "${EMERGE_CMD[@]}" "${EMERGE_FLAGS[@]}" \
     --rebuild-if-unbuilt=n \
     "${args[@]}" "${pkgs[@]}"
