@@ -266,6 +266,7 @@ if [[ "${FLAGS_usepkgonly}" -eq "${FLAGS_FALSE}" ]]; then
   # cryptsetup[udev] -> virtual/udev -> systemd[cryptsetup] -> cryptsetup
   # lvm2[udev] -> virtual/udev -> systemd[cryptsetup] -> cryptsetup -> lvm2
   # lvm2[systemd] -> systemd[cryptsetup] -> cryptsetup -> lvm2
+  # systemd[audit] -> audit -> tmpfiles -> systemd
   # systemd[cryptsetup] -> cryptsetup[udev] -> virtual/udev -> systemd
   # systemd[tpm] -> tpm2-tss -> util-linux[udev] -> virtual/udev -> systemd
   # curl[http2] -> nghttp2[systemd] -> systemd[curl] -> curl
@@ -276,7 +277,7 @@ if [[ "${FLAGS_usepkgonly}" -eq "${FLAGS_FALSE}" ]]; then
   break_dep_loop sys-apps/util-linux cryptsetup,systemd,udev \
                  sys-fs/cryptsetup udev \
                  sys-fs/lvm2 systemd,udev \
-                 sys-apps/systemd cryptsetup,pam,tpm \
+                 sys-apps/systemd audit,cryptsetup,pam,tpm \
                  net-misc/curl http2 \
                  net-libs/nghttp2 systemd \
                  sys-libs/pam systemd \
