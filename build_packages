@@ -270,6 +270,7 @@ if [[ "${FLAGS_usepkgonly}" -eq "${FLAGS_FALSE}" ]]; then
   # systemd[audit] -> audit -> tmpfiles -> systemd
   # systemd[cryptsetup] -> cryptsetup[udev] -> virtual/udev -> systemd
   # systemd[tpm] -> tpm2-tss -> util-linux[udev] -> virtual/udev -> systemd
+  # systemd[selinux] -> selinux-base-policy -> selinux-base -> policycoreutils -> libsemanage -> audit -> tmpfiles -> systemd
   # curl[http2] -> nghttp2[systemd] -> systemd[curl] -> curl
   # sys-libs/pam[systemd] -> sys-apps/systemd[pam] -> sys-libs/pam
   #   dropping USE=pam from sys-apps/systemd requires dropping
@@ -278,7 +279,7 @@ if [[ "${FLAGS_usepkgonly}" -eq "${FLAGS_FALSE}" ]]; then
   break_dep_loop sys-apps/util-linux cryptsetup,pam,systemd,udev \
                  sys-fs/cryptsetup udev \
                  sys-fs/lvm2 systemd,udev \
-                 sys-apps/systemd audit,cryptsetup,pam,tpm \
+                 sys-apps/systemd audit,cryptsetup,pam,selinux,tpm \
                  net-misc/curl http2 \
                  net-libs/nghttp2 systemd \
                  sys-libs/pam audit,systemd \
