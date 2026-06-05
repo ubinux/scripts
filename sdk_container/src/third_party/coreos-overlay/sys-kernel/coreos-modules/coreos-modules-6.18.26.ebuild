@@ -1,4 +1,4 @@
-# Copyright 2014-2016 CoreOS, Inc.
+# Copyright 2026 The Flatcar Container Linux Maintainers
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
