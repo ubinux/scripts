@@ -278,6 +278,7 @@ write_packages() {
 write_sbom() {
     info "Writing ${2##*/}"
     sudo syft scan "${1}" -o spdx-json="$2"
+    "${BUILD_LIBRARY_DIR}/cleanup_sbom_cpe.py" "$2" "${2%.json}_cleaned.json"
 }
 
 # Get metadata $key for package $pkg installed under $prefix
