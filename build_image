@@ -41,6 +41,8 @@ DEFINE_string base_dev_pkg "coreos-base/coreos-dev" \
   "The base portage package to base the build off of (only applies to dev containers)"
 DEFINE_string base_sysexts "containerd-flatcar|app-containers/containerd,docker-flatcar|app-containers/docker&app-containers/docker-cli&app-containers/docker-buildx" \
   "Comma-separated list of name:package[&package[&package]] - build 'package' (a single package or a list of packages separated by '&') into sysext 'name', and include with OS image and update payload. Must be in order of dependencies, base sysexts come first."
+DEFINE_string preload_docker_archives "" \
+  "Comma-separated list of docker image archives (*.docker.tar) to preload into the built OS image via an app-preload sysext."
 DEFINE_string output_root "${DEFAULT_BUILD_ROOT}/images" \
   "Directory in which to place image result directories (named by version)"
 DEFINE_string disk_layout "" \
@@ -179,7 +181,13 @@ fi
 
 if [[ "${PROD_IMAGE}" -eq 1 ]]; then
   IMAGE_BUILD_TYPE="prod"
-  create_prod_image ${FLATCAR_PRODUCTION_IMAGE_NAME} ${DISK_LAYOUT} ${FLAGS_group} ${FLAGS_base_pkg} ${FLAGS_base_sysexts}
+  local_base_sysexts="${FLAGS_base_sysexts}"
+  if [[ -n "${FLAGS_preload_docker_archives}" ]]; then
+    local_base_sysexts="${local_base_sysexts},app-preload|app-shells/bash"
+    export APP_PRELOAD_DOCKER_ARCHIVES="${FLAGS_preload_docker_archives}"
+    info "Enabling app-preload sysext for docker archives: ${FLAGS_preload_docker_archives}"
+  fi
+  create_prod_image ${FLATCAR_PRODUCTION_IMAGE_NAME} ${DISK_LAYOUT} ${FLAGS_group} ${FLAGS_base_pkg} ${local_base_sysexts}
   if [[ ${FLAGS_extract_update} -eq ${FLAGS_TRUE} ]]; then
     extract_update "${FLATCAR_PRODUCTION_IMAGE_NAME}" "${DISK_LAYOUT}"
   fi
