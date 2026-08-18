@@ -34,7 +34,8 @@ for archive in "${archives[@]}"; do
   fi
   base_name="$(basename "${archive}")"
   cp -f "${archive}" "${install_dir}/${base_name}"
-  sha256sum "${install_dir}/${base_name}" | awk '{print $1"  "$2}' >> "${manifest_file}"
+  digest="$(sha256sum "${install_dir}/${base_name}" | awk '{print $1}')"
+  printf '%s  %s\n' "${digest}" "${base_name}" >> "${manifest_file}"
 done
 
 cat > "${script_path}" <<'EOF'
