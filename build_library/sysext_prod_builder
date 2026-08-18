@@ -67,7 +67,10 @@ create_prod_sysext() {
   #
   # Built-in sysexts are stored in the compressed /usr partition, so we
   # disable compression to avoid double-compression.
-  sudo -E "FLATCAR_BUILD_ID=$FLATCAR_BUILD_ID" "${SCRIPTS_DIR}/build_sysext" \
+  sudo -E "FLATCAR_BUILD_ID=$FLATCAR_BUILD_ID" \
+       "APP_PRELOAD_DOCKER_ARCHIVES=${APP_PRELOAD_DOCKER_ARCHIVES-}" \
+       "${SCRIPTS_DIR}/build_sysext" \
+
             --board="${BOARD}" \
             --image_builddir="${workdir}/sysext-build" \
             --squashfs_base="${base_sysext}" \

@@ -1,0 +1,83 @@
+#!/bin/bash
+
+set -euo pipefail
+
+rootfs="${1}"
+archives_csv="${APP_PRELOAD_DOCKER_ARCHIVES:-}"
+
+if [[ -z "${archives_csv}" ]]; then
+  echo "ERROR: APP_PRELOAD_DOCKER_ARCHIVES is empty." >&2
+  exit 1
+fi
+
+install_dir="${rootfs}/usr/share/flatcar/preload-images"
+manifest_dir="${rootfs}/usr/share/flatcar/preload-manifests"
+unit_dir="${rootfs}/usr/lib/systemd/system"
+service_name="flatcar-preload-docker-images.service"
+script_path="${rootfs}/usr/libexec/flatcar-preload-docker-images.sh"
+
+mkdir -p "${install_dir}" "${manifest_dir}" "${rootfs}/usr/libexec" "${unit_dir}" "${rootfs}/etc/systemd/system/multi-user.target.wants"
+
+IFS=',' read -r -a archives <<< "${archives_csv}"
+manifest_file="${manifest_dir}/docker-archives.list"
+: > "${manifest_file}"
+
+for archive in "${archives[@]}"; do
+  archive="${archive## }"
+  archive="${archive%% }"
+  if [[ -z "${archive}" ]]; then
+    continue
+  fi
+  if [[ ! -f "${archive}" ]]; then
+    echo "ERROR: archive not found: ${archive}" >&2
+    exit 1
+  fi
+  base_name="$(basename "${archive}")"
+  cp -f "${archive}" "${install_dir}/${base_name}"
+  sha256sum "${install_dir}/${base_name}" | awk '{print $1"  "$2}' >> "${manifest_file}"
+done
+
+cat > "${script_path}" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+manifest="/usr/share/flatcar/preload-manifests/docker-archives.list"
+marker_root="/var/lib/flatcar/preload-images"
+mkdir -p "${marker_root}"
+
+if [[ ! -f "${manifest}" ]]; then
+  exit 0
+fi
+
+while read -r digest name; do
+  [[ -n "${digest}" && -n "${name}" ]] || continue
+  src="/usr/share/flatcar/preload-images/${name}"
+  marker="${marker_root}/${name}.sha256"
+
+  [[ -f "${src}" ]] || continue
+
+  if [[ -f "${marker}" ]] && [[ "$(cat "${marker}")" == "${digest}" ]]; then
+    continue
+  fi
+
+  /usr/bin/docker load --input "${src}"
+  echo "${digest}" > "${marker}"
+done < "${manifest}"
+EOF
+chmod 0755 "${script_path}"
+
+cat > "${unit_dir}/${service_name}" <<'EOF'
+[Unit]
+Description=Preload Docker images from bundled archives
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/flatcar-preload-docker-images.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+ln -sf "../${service_name}" "${rootfs}/etc/systemd/system/multi-user.target.wants/${service_name}"
