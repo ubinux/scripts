@@ -16,7 +16,7 @@ unit_dir="${rootfs}/usr/lib/systemd/system"
 service_name="flatcar-preload-docker-images.service"
 script_path="${rootfs}/usr/libexec/flatcar-preload-docker-images.sh"
 
-mkdir -p "${install_dir}" "${manifest_dir}" "${rootfs}/usr/libexec" "${unit_dir}" "${rootfs}/etc/systemd/system/multi-user.target.wants"
+mkdir -p "${install_dir}" "${manifest_dir}" "${rootfs}/usr/libexec" "${unit_dir}" "${unit_dir}/multi-user.target.wants" "${rootfs}/etc/systemd/system/multi-user.target.wants"
 
 IFS=',' read -r -a archives <<< "${archives_csv}"
 manifest_file="${manifest_dir}/docker-archives.list"
@@ -43,12 +43,14 @@ cat > "${script_path}" <<'EOF'
 set -euo pipefail
 manifest="/usr/share/flatcar/preload-manifests/docker-archives.list"
 marker_root="/var/lib/flatcar/preload-images"
+done_marker="${marker_root}/.done"
 mkdir -p "${marker_root}"
 
 if [[ ! -f "${manifest}" ]]; then
   exit 0
 fi
 
+loaded=0
 while read -r digest name; do
   [[ -n "${digest}" && -n "${name}" ]] || continue
   src="/usr/share/flatcar/preload-images/${name}"
@@ -62,13 +64,19 @@ while read -r digest name; do
 
   /usr/bin/docker load --input "${src}"
   echo "${digest}" > "${marker}"
+  loaded=1
 done < "${manifest}"
+
+if [[ "${loaded}" -eq 1 ]] || [[ ! -f "${done_marker}" ]]; then
+  touch "${done_marker}"
+fi
 EOF
 chmod 0755 "${script_path}"
 
 cat > "${unit_dir}/${service_name}" <<'EOF'
 [Unit]
 Description=Preload Docker images from bundled archives
+ConditionPathExists=!/var/lib/flatcar/preload-images/.done
 After=docker.service
 Requires=docker.service
 
@@ -81,4 +89,5 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 EOF
 
-ln -sf "../${service_name}" "${rootfs}/etc/systemd/system/multi-user.target.wants/${service_name}"
+ln -sf "../${service_name}" "${unit_dir}/multi-user.target.wants/${service_name}"
+ln -sf "/usr/lib/systemd/system/${service_name}" "${rootfs}/etc/systemd/system/multi-user.target.wants/${service_name}"
