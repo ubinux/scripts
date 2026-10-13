@@ -23,7 +23,8 @@ import sys
 
 PORTAGE_SPDX_PREFIX = "SPDXRef-Package-portage-"
 
-# CPE_MAP: Portage bare package name -> (vendor, product) for CPE generation.
+# CPE_MAP: Portage bare package name -> (vendor, product) or
+# (part, vendor, product) for CPE generation.
 # Sources: NVD CPE dictionary (nvd.nist.gov), upstream project names, syft
 # dictionary.
 CPE_MAP = {
@@ -153,6 +154,7 @@ CPE_MAP = {
 
     # Security / crypto
     "adcli": ("adcli", "adcli"),
+    "google-oslogin": ("google", "oslogin"),
     "argon2": ("argon2", "argon2"),
     "clevis": ("clevis", "clevis"),
     "go-tspi": ("go-tspi", "go-tspi"),
@@ -292,6 +294,8 @@ CPE_MAP = {
 
     # Virtualization
     "qemu-guest-agent": ("qemu", "qemu"),
+    "xenserver-pv-version": ("xen", "xen"),
+    "xenstore": ("xen", "xen"),
 
     # Editors
     "vim": ("vim", "vim"),
@@ -320,7 +324,7 @@ CPE_MAP = {
     "coreos-cloudinit": ("coreos-cloudinit", "coreos-cloudinit"),
     "coreos-firmware": ("coreos-firmware", "coreos-firmware"),
     "coreos-init": ("coreos-init", "coreos-init"),
-    "coreos-kernel": ("coreos-kernel", "coreos-kernel"),
+    "coreos-kernel": ("o", "linux", "linux_kernel"),
     "coreos-modules": ("coreos-modules", "coreos-modules"),
     "flannel-wrapper": ("flannel-wrapper", "flannel-wrapper"),
     "gentoo-functions": ("gentoo-functions", "gentoo-functions"),
@@ -341,9 +345,9 @@ CPE_MAP = {
 }
 
 
-def cpe23(vendor, product, version):
+def cpe23(vendor, product, version, part="a"):
     """Build a CPE 2.3 URI string."""
-    return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
+    return f"cpe:2.3:{part}:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
 
 
 def main():
@@ -377,7 +381,15 @@ def main():
             continue
 
         # Replace SECURITY refs with a single correct CPE
-        vendor, product = CPE_MAP[bare_name]
+        mapping = CPE_MAP[bare_name]
+        if len(mapping) == 2:
+            vendor, product = mapping
+            part = "a"
+        elif len(mapping) == 3:
+            part, vendor, product = mapping
+        else:
+            stats["skipped"] += 1
+            continue
 
         new_refs = [
             r for r in refs if r.get("referenceCategory") != "SECURITY"
@@ -385,7 +397,7 @@ def main():
         new_refs.append({
             "referenceCategory": "SECURITY",
             "referenceType": "cpe23Type",
-            "referenceLocator": cpe23(vendor, product, version),
+            "referenceLocator": cpe23(vendor, product, version, part=part),
         })
         pkg["externalRefs"] = new_refs
         stats["corrected"] += 1
