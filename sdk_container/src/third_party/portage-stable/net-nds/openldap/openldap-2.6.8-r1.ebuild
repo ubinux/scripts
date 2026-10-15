@@ -342,6 +342,8 @@ pkg_setup() {
 }
 
 src_prepare() {
+	cp "${DISTDIR}"/${BIS_P} "${WORKDIR}"/${BIS_PN} || die
+
 	# The system copy of dev-db/lmdb must match the version that this copy
 	# of OpenLDAP shipped with! See bug #588792.
 	#
@@ -820,7 +822,7 @@ multilib_src_install() {
 		newdoc addrdnvalues/README addrdnvalues-README
 
 		insinto /etc/openldap/schema
-		newins "${DISTDIR}"/${BIS_P} ${BIS_PN}
+		newins "${WORKDIR}"/${BIS_PN} ${BIS_PN}
 
 		docinto back-sock ; dodoc "${S}"/servers/slapd/back-sock/searchexample*
 		docinto back-perl ; dodoc "${S}"/servers/slapd/back-perl/SampleLDAP.pm
