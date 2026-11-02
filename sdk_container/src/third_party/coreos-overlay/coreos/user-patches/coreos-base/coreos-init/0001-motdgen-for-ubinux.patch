@@ -1,0 +1,28 @@
+From 656b84153bc7afc9a5002dbec1c7539e0ce4058f Mon Sep 17 00:00:00 2001
+From: Zheng Ruoqin <zhengrq.fnst@fujitsu.com>
+Date: Mon, 26 Oct 2026 03:18:06 +0000
+Subject: [PATCH] motdgen for ubinux
+
+Customized /etc/motd for ubinux.
+
+Signed-off-by: Zheng Ruoqin <zhengrq.fnst@fujitsu.com>
+---
+ scripts/motdgen | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/scripts/motdgen b/scripts/motdgen
+index fe4ed71..bfaae1a 100755
+--- a/scripts/motdgen
++++ b/scripts/motdgen
+@@ -16,7 +16,7 @@ OEM=""
+ if [ -f /oem/oem-release ]; then
+   OEM="$(source /oem/oem-release; echo " for $NAME")"
+ fi
+-echo -e "\e[${ANSI_COLOR}m${NAME}\e[39m ${GROUP} ${VERSION}${OEM}" > /run/flatcar/motd
++echo -e "\e[${ANSI_COLOR}m${NAME}\e[39m ${GROUP} ${UBINUX_VERSION}${OEM}" > /run/flatcar/motd
+
+ if [[ -d "/etc/motd.d" ]]; then
+	cat /etc/motd.d/*.conf 2>/dev/null >> /run/flatcar/motd || true
+--
+2.53.0
+
